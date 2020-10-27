@@ -27,6 +27,7 @@ import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
 @RestController
+@Deprecated
 class QueryController {
 
 	@Autowired
