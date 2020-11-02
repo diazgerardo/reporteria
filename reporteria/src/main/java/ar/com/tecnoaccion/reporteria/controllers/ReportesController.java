@@ -6,11 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.format.annotation.NumberFormat;
 import org.springframework.format.annotation.NumberFormat.Style;
 import org.springframework.http.MediaType;
@@ -34,9 +30,7 @@ class ReportesController {
         this.reporteDinamicoService = reporteDinamicoService;
     }
 
-	
 	@Autowired
-	@Qualifier("reportes")
 	private JdbcTemplate jdbcReportes;
 	
 	@GetMapping(path = "/parametros", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -73,23 +67,23 @@ class ReportesController {
 		) {
 		
 		Integer reporteId;
-		List<Integer> rId = jdbcReportes.queryForList("SELECT id FROM REPORTES WHERE codigo = '" + key + "'", Integer.class); 
+		List<Integer> rId = jdbcReportes.queryForList("SELECT rep.id FROM reportes.REPORTES rep WHERE rep.codigo = '" + key + "'", Integer.class); 
 		if (rId.isEmpty()) {
 			return "Error: reporte desconocido " + key;
 		} else {
 			reporteId = rId.get(0);
 		}
-		System.out.println("Reporte código: " + reporteId);
+		System.out.println("Reporte cï¿½digo: " + reporteId);
 				
-		List<String> paramRequeridos = jdbcReportes.queryForList("SELECT nombre FROM REPORTE_PARAMETROS WHERE opcional = FALSE and reporte_id = '" + reporteId + "'", String.class); 
+		List<String> paramRequeridos = jdbcReportes.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.opcional = FALSE and rp.reporte_id = '" + reporteId + "'", String.class); 
 		Boolean filtrosConParamRequeridos = paramRequeridos.stream().allMatch(
 		   param -> filters.containsKey(param)
 		);
 		if(!filtrosConParamRequeridos) {
-			return "Error: parámetro requerido no presente";
+			return "Error: parï¿½metro requerido no presente";
 		}
 	
-		List<String> params = jdbcReportes.queryForList("SELECT nombre FROM REPORTE_PARAMETROS WHERE reporte_id = '" + reporteId + "'", String.class); 
+		List<String> params = jdbcReportes.queryForList("SELECT rp.nombre FROM REPORTE_PARAMETROS rp WHERE rp.reporte_id = '" + reporteId + "'", String.class); 
 		params.add("key");
 		params.add("codigoOrganizacion");
 		Boolean paramValidos = filters.keySet().stream().allMatch(
@@ -99,7 +93,7 @@ class ReportesController {
 				   k -> System.out.println(k)
 				);
 		if(!paramValidos) {
-			return "Error: parámetro incorrecto";
+			return "Error: parï¿½metro incorrecto";
 		}		
 		return reporteDinamicoService.getReport(key,out,codigoOrganizacion,filters);		
 	}

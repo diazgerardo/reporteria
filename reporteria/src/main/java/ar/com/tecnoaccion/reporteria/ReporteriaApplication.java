@@ -5,8 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
 
-@ComponentScan(basePackages = {"ar.com.tecnoaccion.reporteria"})
-@EntityScan("ar.com.tecnoaccion.reporteria.modelos")
+@ComponentScan(basePackages = {"ar.com.tecnoaccion"})
+@EntityScan("ar.com.tecnoaccion")
 @SpringBootApplication
 
 public class ReporteriaApplication {
