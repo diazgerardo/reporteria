@@ -69,7 +69,7 @@ class ReportesController {
 
 	@GetMapping(path = "/salidas", produces = MediaType.APPLICATION_JSON_VALUE)
 	String listSalidas() {
-		return toJSONArray(jdbcReportes.queryForList("SELECT * reportes.FROM SALIDA;")).toString();
+		return toJSONArray(jdbcReportes.queryForList("SELECT * reportes.reportes FROM SALIDA;")).toString();
 	}	
 
 	@GetMapping("/dinamicos")
