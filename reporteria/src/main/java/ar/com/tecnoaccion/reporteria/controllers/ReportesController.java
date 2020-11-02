@@ -99,7 +99,7 @@ class ReportesController {
 			return "Error: par�metro requerido no presente";
 		}
 	
-		List<String> params = jdbcReportes.queryForList("SELECT rp.nombre FROM REPORTE_PARAMETROS rp WHERE rp.reporte_id = '" + reporteId + "'", String.class); 
+		List<String> params = jdbcReportes.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.reporte_id = '" + reporteId + "'", String.class); 
 		params.add("key");
 		params.add("codigoOrganizacion");
 		Boolean paramValidos = filters.keySet().stream().allMatch(
