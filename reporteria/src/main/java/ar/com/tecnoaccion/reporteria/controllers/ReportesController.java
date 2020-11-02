@@ -3,6 +3,8 @@ package ar.com.tecnoaccion.reporteria.controllers;
 import static ar.com.tecnoaccion.reporteria.utils.JSONUtils.toJSONArray;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,28 +16,30 @@ import org.springframework.format.annotation.NumberFormat.Style;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.com.tecnoaccion.reporteria.core.ReporteComponent;
 import ar.com.tecnoaccion.reporteria.dto.enums.CType;
+import ar.com.tecnoaccion.reporteria.services.ReporteDinamicoService;
 
 @RestController
 @RequestMapping("/reportes")
-@CrossOrigin(origins = "*", methods= {RequestMethod.GET,RequestMethod.POST})
-class ReportesController implements ApplicationContextAware {
+class ReportesController {
+	
+	private ReporteDinamicoService reporteDinamicoService;
+	
+	public ReportesController(ReporteDinamicoService reporteDinamicoService) {        
+        this.reporteDinamicoService = reporteDinamicoService;
+    }
 
-	private ApplicationContext ctx;
 	
 	@Autowired
 	@Qualifier("reportes")
 	private JdbcTemplate jdbcReportes;
-
-	@GetMapping(path = "/reportesParametros", produces = MediaType.APPLICATION_JSON_VALUE)
+	
+	@GetMapping(path = "/parametros", produces = MediaType.APPLICATION_JSON_VALUE)
 	String listParametros() {
 		return toJSONArray(jdbcReportes.queryForList("SELECT * FROM REPORTE_PARAMETROS;")).toString();
 	}
@@ -44,32 +48,59 @@ class ReportesController implements ApplicationContextAware {
 	String listGrupos() {
 		return toJSONArray(jdbcReportes.queryForList("SELECT * FROM GRUPOS;")).toString();
 	}
-	
+	 
 	@GetMapping(path = "/reportes", produces=MediaType.APPLICATION_JSON_VALUE)
 	@Validated
-	public String listReportes(@RequestParam("grupo") @NumberFormat(style=Style.NUMBER) Integer grupo) {
-		 return toJSONArray(jdbcReportes.queryForList("SELECT * FROM REPORTES where grupo_id = '"+grupo+"'")).toString();
+	public String listReportes(@RequestParam("grupo") @NumberFormat(style=Style.NUMBER) Optional<Integer> grupo) {
+		 String sql = "SELECT * FROM REPORTES ";
+		 if(grupo.isPresent()) {
+			 sql = sql + " where grupo_id = '" + grupo.get() + "'";
+		 }
+		 return toJSONArray(jdbcReportes.queryForList(sql)).toString();
 	}
 
 	@GetMapping(path = "/salidas", produces = MediaType.APPLICATION_JSON_VALUE)
 	String listSalidas() {
-		return toJSONArray(jdbcReportes.queryForList("SELECT * FROM GRUPOS;")).toString();
-	}
-	
+		return toJSONArray(jdbcReportes.queryForList("SELECT * FROM SALIDA;")).toString();
+	}	
 
 	@GetMapping("/dinamicos")
 	String reporteDinamico(
-			@RequestParam("key") String reportKey,
-            @RequestParam(value = "out", defaultValue = "pdf", required = false) CType out,
-            @RequestParam(value = "codigoOrganizacion", required = true) int codigoOrganizacion,
-            @RequestParam HashMap<String, String> filtros) {
-		ReporteComponent service =ctx.getBean(reportKey, ReporteComponent.class);
-		return service.reportar();
+			@RequestParam(value="key", required=true) String key,
+			@RequestParam(value="codigoOrganizacion", required=true) int codigoOrganizacion,
+			@RequestParam(value = "out",defaultValue = "pdf",required = false) CType out,
+			@RequestParam HashMap<String, String> filters
+		) {
+		
+		Integer reporteId;
+		List<Integer> rId = jdbcReportes.queryForList("SELECT id FROM REPORTES WHERE codigo = '" + key + "'", Integer.class); 
+		if (rId.isEmpty()) {
+			return "Error: reporte desconocido " + key;
+		} else {
+			reporteId = rId.get(0);
+		}
+		System.out.println("Reporte código: " + reporteId);
+				
+		List<String> paramRequeridos = jdbcReportes.queryForList("SELECT nombre FROM REPORTE_PARAMETROS WHERE opcional = FALSE and reporte_id = '" + reporteId + "'", String.class); 
+		Boolean filtrosConParamRequeridos = paramRequeridos.stream().allMatch(
+		   param -> filters.containsKey(param)
+		);
+		if(!filtrosConParamRequeridos) {
+			return "Error: parámetro requerido no presente";
+		}
+	
+		List<String> params = jdbcReportes.queryForList("SELECT nombre FROM REPORTE_PARAMETROS WHERE reporte_id = '" + reporteId + "'", String.class); 
+		params.add("key");
+		params.add("codigoOrganizacion");
+		Boolean paramValidos = filters.keySet().stream().allMatch(
+		   param -> params.contains(param)
+		);
+		filters.keySet().stream().forEach(
+				   k -> System.out.println(k)
+				);
+		if(!paramValidos) {
+			return "Error: parámetro incorrecto";
+		}		
+		return reporteDinamicoService.getReport(key,out,codigoOrganizacion,filters);		
 	}
-
-	@Override
-	public void setApplicationContext(ApplicationContext ctx) throws BeansException {
-		this.ctx = ctx;
-	}
-
 }
