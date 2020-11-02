@@ -1,4 +1,4 @@
-package ar.com.tecnoaccion.reporteria.rowmappers;
+package ar.com.tecnoaccion.reporteria.core.rowmappers;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

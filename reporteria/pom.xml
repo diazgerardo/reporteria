@@ -106,36 +106,31 @@
             <artifactId>jasperreports</artifactId>
             <version>6.11.0</version>
         </dependency>
+
+		<!-- http://mvnrepository.com/artifact/ar.com.fdvs/DynamicJasper -->
+		<dependency>
+			<groupId>ar.com.fdvs</groupId>
+			<artifactId>DynamicJasper</artifactId>
+			<version>5.3.1</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/ar.com.fdvs/DynamicJasper-core-fonts -->
+		<dependency>
+			<groupId>ar.com.fdvs</groupId>
+			<artifactId>DynamicJasper-core-fonts</artifactId>
+			<version>2.0</version>
+		</dependency>
         
 	</dependencies>
 
 	<build>
 		<plugins>
-
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-
 				<configuration>
 					<executable>true</executable>
 				</configuration>
-			</plugin>
-
-			<plugin>
-				<artifactId>exec-maven-plugin</artifactId>
-				<groupId>org.codehaus.mojo</groupId>
-				<executions>
-					<execution>
-						<id>Version Calculation</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>${basedir}/version.bat</executable>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>

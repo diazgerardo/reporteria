@@ -1,4 +1,4 @@
-package ar.com.tecnoaccion.reporteria.reports;
+package ar.com.tecnoaccion.reporteria.core;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,10 +13,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import ar.com.tecnoaccion.reporteria.beans.TotalesDiarios;
-import ar.com.tecnoaccion.reporteria.rowmappers.TotalesDiariosRowMapper;
+import ar.com.tecnoaccion.reporteria.core.rowmappers.TotalesDiariosRowMapper;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperExportManager;
@@ -25,9 +25,8 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
-@Service
-@Qualifier("totalesDiarios")
-public class TotalesDiariosReporteImpl implements ReporteService {
+@Component("totalesDiarios")
+public class TotalesDiariosReporteImpl implements ReporteComponent {
 
 	@Value("${reporte.output.path}")
 	private String reporteOutputPath;

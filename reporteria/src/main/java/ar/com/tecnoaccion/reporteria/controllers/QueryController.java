@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ar.com.tecnoaccion.reporteria.beans.TotalesDiarios;
-import ar.com.tecnoaccion.reporteria.rowmappers.TotalesDiariosRowMapper;
+import ar.com.tecnoaccion.reporteria.core.rowmappers.TotalesDiariosRowMapper;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperExportManager;

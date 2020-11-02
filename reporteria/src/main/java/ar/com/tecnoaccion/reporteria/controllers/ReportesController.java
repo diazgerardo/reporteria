@@ -3,7 +3,6 @@ package ar.com.tecnoaccion.reporteria.controllers;
 import static ar.com.tecnoaccion.reporteria.utils.JSONUtils.toJSONArray;
 
 import java.util.HashMap;
-import java.util.Map;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,22 +14,21 @@ import org.springframework.format.annotation.NumberFormat.Style;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.com.tecnoaccion.reporteria.reports.ReporteService;
-import ar.com.tecnoaccion.reporteria.reports.TotalesDiariosReporteImpl;
+import ar.com.tecnoaccion.reporteria.core.ReporteComponent;
+import ar.com.tecnoaccion.reporteria.dto.enums.CType;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/reportes")
+@CrossOrigin(origins = "*", methods= {RequestMethod.GET,RequestMethod.POST})
 class ReportesController implements ApplicationContextAware {
 
-	private static Map<String, Class> servicios = new HashMap<String, Class>();
-	static {
-		servicios.put("totalesDiarios", TotalesDiariosReporteImpl.class);
-	}
 	private ApplicationContext ctx;
 	
 	@Autowired
@@ -59,16 +57,14 @@ class ReportesController implements ApplicationContextAware {
 	}
 	
 
-	@GetMapping("/ejecutar")
-	String reportar(@RequestParam(value="reporte", required=true) String reporte ) {
-		if(servicios.containsKey(reporte)) {
-			//TODO revisar por que no obtiene el bean directamente por el nombre
-			// y hay q andar haciendo esta manganeta...
-			Class clazz = servicios.get(reporte);
-			ReporteService service = (ReporteService) ctx.getBean(clazz);
-			return service.reportar();
-		}
-		return "Error: reporte desconocido "+reporte;
+	@GetMapping("/dinamicos")
+	String reporteDinamico(
+			@RequestParam("key") String reportKey,
+            @RequestParam(value = "out", defaultValue = "pdf", required = false) CType out,
+            @RequestParam(value = "codigoOrganizacion", required = true) int codigoOrganizacion,
+            @RequestParam HashMap<String, String> filtros) {
+		ReporteComponent service =ctx.getBean(reportKey, ReporteComponent.class);
+		return service.reportar();
 	}
 
 	@Override
