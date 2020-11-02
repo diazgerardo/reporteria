@@ -4,6 +4,7 @@ import static ar.com.tecnoaccion.reporteria.utils.JSONUtils.toJSONArray;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,12 +80,14 @@ class ReportesController {
 			@RequestParam HashMap<String, String> filters
 		) {
 		
-		Integer reporteId;
-		List<Integer> rId = jdbcReportes.queryForList("SELECT rep.id FROM reportes.REPORTES rep WHERE rep.codigo = '" + key + "'", Integer.class); 
-		if (rId.isEmpty()) {
+		Integer reporteId = null;
+		String consultaSQL = null;
+		List<Map<String, Object>> results = jdbcReportes.queryForList("SELECT rep.id,rep.consulta_sql FROM reportes.REPORTES rep WHERE rep.codigo = '" + key + "'"); 
+		if (results.isEmpty()) {
 			return "Error: reporte desconocido " + key;
 		} else {
-			reporteId = rId.get(0);
+			reporteId =(Integer) results.get(0).get("id");
+			consultaSQL=(String) results.get(0).get("consulta_sql");
 		}
 		System.out.println("Reporte c�digo: " + reporteId);
 				
