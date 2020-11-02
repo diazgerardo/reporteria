@@ -13,16 +13,23 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.com.tecnoaccion.reporteria.dto.OrganizacionDTO;
 import ar.com.tecnoaccion.reporteria.dto.enums.CType;
+import ar.com.tecnoaccion.reporteria.repositorios.OrganizacionRepository;
+import ar.com.tecnoaccion.reporteria.services.OrganizacionService;
 import ar.com.tecnoaccion.reporteria.services.ReporteDinamicoService;
 
 @RestController
 @RequestMapping("/reportes")
 class ReportesController {
+	
+	@Autowired
+	OrganizacionService organizacionService;
 	
 	private ReporteDinamicoService reporteDinamicoService;
 	
@@ -33,20 +40,26 @@ class ReportesController {
 	@Autowired
 	private JdbcTemplate jdbcReportes;
 	
+	@GetMapping(path = "/organizaciones/{codigo}", produces = MediaType.APPLICATION_JSON_VALUE)
+	public OrganizacionDTO porCodigo(@PathVariable Integer codigo) {
+		OrganizacionDTO dto = organizacionService.getByCodigo(codigo);
+		return dto;
+	}
+	
 	@GetMapping(path = "/parametros", produces = MediaType.APPLICATION_JSON_VALUE)
 	String listParametros() {
-		return toJSONArray(jdbcReportes.queryForList("SELECT * FROM REPORTE_PARAMETROS;")).toString();
+		return toJSONArray(jdbcReportes.queryForList("SELECT * FROM reportes.REPORTE_PARAMETROS;")).toString();
 	}
 
 	@GetMapping(path = "/grupos", produces = MediaType.APPLICATION_JSON_VALUE)
 	String listGrupos() {
-		return toJSONArray(jdbcReportes.queryForList("SELECT * FROM GRUPOS;")).toString();
+		return toJSONArray(jdbcReportes.queryForList("SELECT * FROM reportes.GRUPOS;")).toString();
 	}
 	 
 	@GetMapping(path = "/reportes", produces=MediaType.APPLICATION_JSON_VALUE)
 	@Validated
 	public String listReportes(@RequestParam("grupo") @NumberFormat(style=Style.NUMBER) Optional<Integer> grupo) {
-		 String sql = "SELECT * FROM REPORTES ";
+		 String sql = "SELECT * FROM reportes.REPORTES ";
 		 if(grupo.isPresent()) {
 			 sql = sql + " where grupo_id = '" + grupo.get() + "'";
 		 }
@@ -55,7 +68,7 @@ class ReportesController {
 
 	@GetMapping(path = "/salidas", produces = MediaType.APPLICATION_JSON_VALUE)
 	String listSalidas() {
-		return toJSONArray(jdbcReportes.queryForList("SELECT * FROM SALIDA;")).toString();
+		return toJSONArray(jdbcReportes.queryForList("SELECT * reportes.FROM SALIDA;")).toString();
 	}	
 
 	@GetMapping("/dinamicos")
