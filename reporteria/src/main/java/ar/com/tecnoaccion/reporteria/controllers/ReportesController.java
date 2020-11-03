@@ -2,7 +2,6 @@ package ar.com.tecnoaccion.reporteria.controllers;
 
 import static ar.com.tecnoaccion.reporteria.utils.JSONUtils.toJSONArray;
 
-import java.sql.Types;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,10 +12,6 @@ import org.springframework.format.annotation.NumberFormat;
 import org.springframework.format.annotation.NumberFormat.Style;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.SqlParameterValue;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,9 +37,6 @@ class ReportesController {
         this.reporteDinamicoService = reporteDinamicoService;
     }
 
-	@Autowired
-	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-	
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 	
@@ -109,21 +101,19 @@ class ReportesController {
 		List<String> params = jdbcTemplate.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.reporte_id = '" + reporteId + "'", String.class); 
 		params.add("key");
 		params.add("codigoOrganizacion");
+		params.add("out");
+
 		Boolean paramValidos = filters.keySet().stream().allMatch(
 		   param -> params.contains(param)
 		);
 		filters.keySet().stream().forEach(
 				   k -> System.out.println(k)
 				);
-//		if(!paramValidos) {
-//			return "Error: par�metro incorrecto";
-//		}		
-//		
-		SqlParameterSource parameters = new MapSqlParameterSource().addValue("desde",new SqlParameterValue(Types.VARCHAR, filters.get("desde"))).addValue("hasta", new SqlParameterValue(Types.VARCHAR, filters.get("hasta")));
-		List<Map<String, Object>> datos = namedParameterJdbcTemplate.queryForList(consultaSQL,parameters); 
+		if(!paramValidos) {
+			return "Error: parametro incorrecto";
+		}		
 		
-		// TODO pasarle datos al reporte
 		
-		return reporteDinamicoService.getReport(key,out,codigoOrganizacion,filters);		
+		return reporteDinamicoService.getReport(key,out,codigoOrganizacion, consultaSQL,filters);		
 	}
 }
