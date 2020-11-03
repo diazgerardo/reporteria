@@ -2,6 +2,7 @@ package ar.com.tecnoaccion.reporteria.controllers;
 
 import static ar.com.tecnoaccion.reporteria.utils.JSONUtils.toJSONArray;
 
+import java.sql.Types;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,10 @@ import org.springframework.format.annotation.NumberFormat;
 import org.springframework.format.annotation.NumberFormat.Style;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.SqlParameterValue;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ar.com.tecnoaccion.reporteria.dto.OrganizacionDTO;
 import ar.com.tecnoaccion.reporteria.dto.enums.CType;
-import ar.com.tecnoaccion.reporteria.repositorios.OrganizacionRepository;
 import ar.com.tecnoaccion.reporteria.services.OrganizacionService;
 import ar.com.tecnoaccion.reporteria.services.ReporteDinamicoService;
 
@@ -39,7 +43,10 @@ class ReportesController {
     }
 
 	@Autowired
-	private JdbcTemplate jdbcReportes;
+	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+	
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 	
 	@GetMapping(path = "/organizaciones/{codigo}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public OrganizacionDTO porCodigo(@PathVariable Integer codigo) {
@@ -49,12 +56,12 @@ class ReportesController {
 	
 	@GetMapping(path = "/parametros", produces = MediaType.APPLICATION_JSON_VALUE)
 	String listParametros() {
-		return toJSONArray(jdbcReportes.queryForList("SELECT * FROM reportes.REPORTE_PARAMETROS;")).toString();
+		return toJSONArray(jdbcTemplate.queryForList("SELECT * FROM reportes.REPORTE_PARAMETROS;")).toString();
 	}
 
 	@GetMapping(path = "/grupos", produces = MediaType.APPLICATION_JSON_VALUE)
 	String listGrupos() {
-		return toJSONArray(jdbcReportes.queryForList("SELECT * FROM reportes.GRUPOS;")).toString();
+		return toJSONArray(jdbcTemplate.queryForList("SELECT * FROM reportes.GRUPOS;")).toString();
 	}
 	 
 	@GetMapping(path = "/reportes", produces=MediaType.APPLICATION_JSON_VALUE)
@@ -64,12 +71,12 @@ class ReportesController {
 		 if(grupo.isPresent()) {
 			 sql = sql + " where grupo_id = '" + grupo.get() + "'";
 		 }
-		 return toJSONArray(jdbcReportes.queryForList(sql)).toString();
+		 return toJSONArray(jdbcTemplate.queryForList(sql)).toString();
 	}
 
 	@GetMapping(path = "/salidas", produces = MediaType.APPLICATION_JSON_VALUE)
 	String listSalidas() {
-		return toJSONArray(jdbcReportes.queryForList("SELECT * reportes.reportes FROM SALIDA;")).toString();
+		return toJSONArray(jdbcTemplate.queryForList("SELECT * reportes.reportes FROM SALIDA;")).toString();
 	}	
 
 	@GetMapping("/dinamicos")
@@ -82,7 +89,7 @@ class ReportesController {
 		
 		Integer reporteId = null;
 		String consultaSQL = null;
-		List<Map<String, Object>> results = jdbcReportes.queryForList("SELECT rep.id,rep.consulta_sql FROM reportes.REPORTES rep WHERE rep.codigo = '" + key + "'"); 
+		List<Map<String, Object>> results = jdbcTemplate.queryForList("SELECT rep.id,rep.consulta_sql FROM reportes.REPORTES rep WHERE rep.codigo = '" + key + "'"); 
 		if (results.isEmpty()) {
 			return "Error: reporte desconocido " + key;
 		} else {
@@ -91,7 +98,7 @@ class ReportesController {
 		}
 		System.out.println("Reporte c�digo: " + reporteId);
 				
-		List<String> paramRequeridos = jdbcReportes.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.opcional = FALSE and rp.reporte_id = '" + reporteId + "'", String.class); 
+		List<String> paramRequeridos = jdbcTemplate.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.opcional = FALSE and rp.reporte_id = '" + reporteId + "'", String.class); 
 		Boolean filtrosConParamRequeridos = paramRequeridos.stream().allMatch(
 		   param -> filters.containsKey(param)
 		);
@@ -99,7 +106,7 @@ class ReportesController {
 			return "Error: par�metro requerido no presente";
 		}
 	
-		List<String> params = jdbcReportes.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.reporte_id = '" + reporteId + "'", String.class); 
+		List<String> params = jdbcTemplate.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.reporte_id = '" + reporteId + "'", String.class); 
 		params.add("key");
 		params.add("codigoOrganizacion");
 		Boolean paramValidos = filters.keySet().stream().allMatch(
@@ -108,9 +115,15 @@ class ReportesController {
 		filters.keySet().stream().forEach(
 				   k -> System.out.println(k)
 				);
-		if(!paramValidos) {
-			return "Error: par�metro incorrecto";
-		}		
+//		if(!paramValidos) {
+//			return "Error: par�metro incorrecto";
+//		}		
+//		
+		SqlParameterSource parameters = new MapSqlParameterSource().addValue("desde",new SqlParameterValue(Types.VARCHAR, filters.get("desde"))).addValue("hasta", new SqlParameterValue(Types.VARCHAR, filters.get("hasta")));
+		List<Map<String, Object>> datos = namedParameterJdbcTemplate.queryForList(consultaSQL,parameters); 
+		
+		// TODO pasarle datos al reporte
+		
 		return reporteDinamicoService.getReport(key,out,codigoOrganizacion,filters);		
 	}
 }

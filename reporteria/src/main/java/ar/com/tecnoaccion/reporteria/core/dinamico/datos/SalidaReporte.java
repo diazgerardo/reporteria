@@ -1,7 +1,5 @@
 package ar.com.tecnoaccion.reporteria.core.dinamico.datos;
 
-import ar.com.tecnoaccion.reporteria.dto.enums.CType;
-
 import java.util.List;
 
 public class SalidaReporte {
