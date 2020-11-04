@@ -47,8 +47,11 @@ public class ExportServiceImpl implements ExportService {
 		exporter.setExporterOutput(getOutput(type, out));
 		try {
 			exporter.exportReport();
-			FileOutputStream stream = new FileOutputStream(new File(outputFile));
+			File file = new File(outputFile);
+			FileOutputStream stream = new FileOutputStream(file);
 			out.writeTo(stream);
+			out.close();
+			stream.close();
 			if(logger.isDebugEnabled())
 				logger.debug("archivo "+outputFile+" creado.");
 			return Boolean.TRUE;

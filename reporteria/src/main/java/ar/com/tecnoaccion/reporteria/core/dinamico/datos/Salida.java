@@ -2,25 +2,25 @@ package ar.com.tecnoaccion.reporteria.core.dinamico.datos;
 
 import java.util.List;
 
-public class SalidaReporte {
+public class Salida {
     String titulo;
     String footer;
-    List<Col> columnas;
+    List<ColumnaSalida> columnas;
 
-    public SalidaReporte(String titulo, String footer, List<Col> columnas) {
+    public Salida(String titulo, String footer, List<ColumnaSalida> columnas) {
         this.titulo = titulo;
         this.footer = footer;
         this.columnas = columnas;
     }
 
-    public SalidaReporte() {
+    public Salida() {
     }
 
-    public List<Col> getColumnas() {
+    public List<ColumnaSalida> getColumnas() {
         return columnas;
     }
 
-    public void setColumnas(List<Col> columnas) {
+    public void setColumnas(List<ColumnaSalida> columnas) {
         this.columnas = columnas;
     }
 

@@ -102,7 +102,12 @@ class ReportesController {
 		params.add("key");
 		params.add("codigoOrganizacion");
 		params.add("out");
-
+		
+		List<Map<String, Object>> nombreEtiquetaTamanio = jdbcTemplate.queryForList("SELECT sal.nombre, sal.etiqueta,sal.tam FROM reportes.SALIDA sal WHERE sal.reporte_id = '" + reporteId + "'"); 
+		if (nombreEtiquetaTamanio.isEmpty()) {
+			return "Error: salida desconocida para reporteId=" + reporteId;
+		} 
+		
 		Boolean paramValidos = filters.keySet().stream().allMatch(
 		   param -> params.contains(param)
 		);
@@ -114,6 +119,6 @@ class ReportesController {
 		}		
 		
 		
-		return reporteDinamicoService.getReport(key,out,codigoOrganizacion, consultaSQL,filters);		
+		return reporteDinamicoService.getReport(key,out,codigoOrganizacion, consultaSQL,filters,nombreEtiquetaTamanio);		
 	}
 }

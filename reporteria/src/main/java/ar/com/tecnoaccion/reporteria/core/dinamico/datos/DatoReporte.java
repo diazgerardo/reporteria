@@ -8,10 +8,10 @@ import ar.com.tecnoaccion.reporteria.dto.enums.CType;
 
 public class DatoReporte {
     private String key;
-    private String sql;
     private CType out;
     private int codigoOrganizacion;
     private List<Arg> argumentos;
+	private String nombreOrga;
 
     public DatoReporte() {
     }
@@ -22,14 +22,6 @@ public class DatoReporte {
 
     public void setKey(String key) {
         this.key = key;
-    }
-
-    public String getSql() {
-        return sql;
-    }
-
-    public void setSql(String sql) {
-        this.sql = sql;
     }
 
     public CType getOut() {
@@ -55,5 +47,13 @@ public class DatoReporte {
     public void setArgumentos(List<Arg> argumentos) {
         this.argumentos = argumentos;
     }
+
+	public String getNombreOrga() {
+		return this.nombreOrga;
+	}
+    public void setNombreOrga(String nombreOrga) {
+		this.nombreOrga = nombreOrga;
+	}
+	
 
 }

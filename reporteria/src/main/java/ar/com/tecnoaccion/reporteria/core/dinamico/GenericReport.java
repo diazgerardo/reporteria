@@ -1,6 +1,7 @@
 package ar.com.tecnoaccion.reporteria.core.dinamico;
 
 import java.awt.Color;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -25,7 +26,7 @@ import ar.com.fdvs.dj.domain.constants.Transparency;
 import ar.com.fdvs.dj.domain.constants.VerticalAlign;
 import ar.com.fdvs.dj.domain.entities.columns.AbstractColumn;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.DatoReporte;
-import ar.com.tecnoaccion.reporteria.core.dinamico.datos.SalidaReporte;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Salida;
 import ar.com.tecnoaccion.reporteria.exception.ReportException;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperPrint;
@@ -42,10 +43,10 @@ import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
  */
 public class GenericReport implements Report {
 	private DatoReporte datoReporte;
-	private SalidaReporte salidaReporte;
+	private Salida salidaReporte;
 	private List<Map<String,Object>> resultados;
 
-	public GenericReport(DatoReporte datoReporte, SalidaReporte salidaReporte,List<Map<String, Object>> resultados) {
+	public GenericReport(DatoReporte datoReporte, Salida salidaReporte,List<Map<String, Object>> resultados) {
 		this.datoReporte = datoReporte;
 		this.salidaReporte = salidaReporte;
 		this.resultados = resultados;
@@ -129,16 +130,13 @@ public class GenericReport implements Report {
 			throws ColumnBuilderException, ClassNotFoundException {
 
 		DynamicReportBuilder report = new DynamicReportBuilder();
-		//salidaReporte.getColumnas().stream().forEach(k -> System.out.println(k.getNombre() + "/" + k.getClase().getName() + "/" + k.getTitulo()));
-		salidaReporte.getColumnas().stream().forEach(k -> report.addColumn(createColumn(k.getNombre(),k.getClase(),k.getTitulo(),3000,headerStyle,detailTextStyle)));
-		//resultados.get(0).keySet().stream().forEach(k -> report.addColumn(createColumn(k,resultados.get(0).get(k).getClass(),"columna_" +k,30,headerStyle,detailNumStyle)));
-
-		StyleBuilder titleStyle = new StyleBuilder(true);
+		salidaReporte.getColumnas().stream().forEach(
+				k -> report.addColumn(createColumn(k.getNombre(),String.class,k.getTitulo(),k.getTamanio().multiply(new BigDecimal(100)).intValue(),headerStyle,detailTextStyle)));
+		
+				StyleBuilder titleStyle = new StyleBuilder(true);
 		titleStyle.setHorizontalAlign(HorizontalAlign.CENTER);
 		titleStyle.setFont(new Font(20, null, true));
-		// you can also specify a font from the classpath, eg:
-		// titleStyle.setFont(new Font(20, "/fonts/someFont.ttf", true));
-
+		
 		StyleBuilder subTitleStyle = new StyleBuilder(true);
 		subTitleStyle.setHorizontalAlign(HorizontalAlign.LEFT);
 		subTitleStyle.setFont(new Font(Font.MEDIUM, null, true));
@@ -154,7 +152,8 @@ public class GenericReport implements Report {
 			report.setSubtitleStyle(subTitleStyle.build());
 		}
 		report.setUseFullPageWidth(true);
-		String texto="Lotería de Santa Cruz";
+		
+		String texto=datoReporte.getNombreOrga();
 		AutoText hdr=new AutoText((texto),AutoText.POSITION_FOOTER,HorizontalBandAlignment.LEFT);
 		hdr.setWidth(300);
 		report.addAutoText(hdr);
