@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ar.com.tecnoaccion.reporteria.dto.OrganizacionDTO;
+import ar.com.tecnoaccion.reporteria.dto.ReporteDTO;
 import ar.com.tecnoaccion.reporteria.dto.enums.CType;
 import ar.com.tecnoaccion.reporteria.services.OrganizacionService;
 import ar.com.tecnoaccion.reporteria.services.ReporteDinamicoService;
@@ -78,19 +79,20 @@ class ReportesController {
 			@RequestParam(value = "out",defaultValue = "pdf",required = false) CType out,
 			@RequestParam HashMap<String, String> filters
 		) {
-		
-		Integer reporteId = null;
-		String consultaSQL = null;
-		List<Map<String, Object>> results = jdbcTemplate.queryForList("SELECT rep.id,rep.consulta_sql FROM reportes.REPORTES rep WHERE rep.codigo = '" + key + "'"); 
+	
+		ReporteDTO reporteDTO = null;
+		List<Map<String, Object>> results = jdbcTemplate.queryForList("SELECT rep.id,rep.consulta_sql,rep.titulo FROM reportes.REPORTES rep WHERE rep.codigo = '" + key + "'"); 
 		if (results.isEmpty()) {
 			return "Error: reporte desconocido " + key;
 		} else {
-			reporteId =(Integer) results.get(0).get("id");
-			consultaSQL=(String) results.get(0).get("consulta_sql");
+			reporteDTO = new ReporteDTO();
+			reporteDTO.setReporteId((Integer) results.get(0).get("id"));
+			reporteDTO.setConsultaSql((String) results.get(0).get("consulta_sql"));
+			reporteDTO.setTitulo((String) results.get(0).get("titulo"));
 		}
-		System.out.println("Reporte c�digo: " + reporteId);
-				
-		List<String> paramRequeridos = jdbcTemplate.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.opcional = FALSE and rp.reporte_id = '" + reporteId + "'", String.class); 
+		System.out.println("Reporte codigo: " + reporteDTO.toString());
+	
+		List<String> paramRequeridos = jdbcTemplate.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.opcional = FALSE and rp.reporte_id = '" + reporteDTO.getReporteId() + "'", String.class); 
 		Boolean filtrosConParamRequeridos = paramRequeridos.stream().allMatch(
 		   param -> filters.containsKey(param)
 		);
@@ -98,14 +100,15 @@ class ReportesController {
 			return "Error: par�metro requerido no presente";
 		}
 	
-		List<String> params = jdbcTemplate.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.reporte_id = '" + reporteId + "'", String.class); 
+		List<String> params = jdbcTemplate.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.reporte_id = '" + reporteDTO.getReporteId() + "'", String.class); 
 		params.add("key");
 		params.add("codigoOrganizacion");
 		params.add("out");
 		
-		List<Map<String, Object>> nombreEtiquetaTamanio = jdbcTemplate.queryForList("SELECT sal.nombre, sal.etiqueta,sal.tam FROM reportes.SALIDA sal WHERE sal.reporte_id = '" + reporteId + "'"); 
+		
+		List<Map<String, Object>> nombreEtiquetaTamanio = jdbcTemplate.queryForList("SELECT sal.nombre, sal.etiqueta,sal.tam FROM reportes.SALIDA sal WHERE sal.reporte_id = '" + reporteDTO.getReporteId() + "'"); 
 		if (nombreEtiquetaTamanio.isEmpty()) {
-			return "Error: salida desconocida para reporteId=" + reporteId;
+			return "Error: salida desconocida para reporteId=" + reporteDTO.getReporteId();
 		} 
 		
 		Boolean paramValidos = filters.keySet().stream().allMatch(
@@ -118,7 +121,11 @@ class ReportesController {
 			return "Error: parametro incorrecto";
 		}		
 		
-		
-		return reporteDinamicoService.getReport(key,out,codigoOrganizacion, consultaSQL,filters,nombreEtiquetaTamanio);		
+		reporteDTO.setKey(key);
+		reporteDTO.setCodigoOrganizacion(codigoOrganizacion);
+		reporteDTO.setFilters(filters);
+		reporteDTO.setNombreEtiquetaTamanio(nombreEtiquetaTamanio);
+		reporteDTO.setOut(out);
+		return reporteDinamicoService.getReport(reporteDTO);		
 	}
 }
