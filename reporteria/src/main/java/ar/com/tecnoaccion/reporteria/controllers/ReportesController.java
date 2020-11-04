@@ -2,6 +2,7 @@ package ar.com.tecnoaccion.reporteria.controllers;
 
 import static ar.com.tecnoaccion.reporteria.utils.JSONUtils.toJSONArray;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import org.springframework.format.annotation.NumberFormat;
 import org.springframework.format.annotation.NumberFormat.Style;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.com.tecnoaccion.reporteria.core.CampoDetalle;
 import ar.com.tecnoaccion.reporteria.dto.OrganizacionDTO;
 import ar.com.tecnoaccion.reporteria.dto.ReporteDTO;
 import ar.com.tecnoaccion.reporteria.dto.enums.CType;
@@ -100,10 +103,21 @@ class ReportesController {
 			return "Error: par�metro requerido no presente";
 		}
 	
-		List<String> params = jdbcTemplate.queryForList("SELECT rp.nombre FROM reportes.REPORTE_PARAMETROS rp WHERE rp.reporte_id = '" + reporteDTO.getReporteId() + "'", String.class); 
-		params.add("key");
-		params.add("codigoOrganizacion");
-		params.add("out");
+		List<Map<String,Object>> params = jdbcTemplate.queryForList("SELECT rp.nombre,rp.tipo FROM reportes.REPORTE_PARAMETROS rp WHERE rp.reporte_id = '" + reporteDTO.getReporteId() + "'"); 
+		Map map = new LinkedCaseInsensitiveMap();
+		map.put("key",key);
+		params.add(map);
+		map = new LinkedCaseInsensitiveMap();
+		map.put("codigoOrganizacion",codigoOrganizacion);
+		params.add(map);
+		map = new LinkedCaseInsensitiveMap();
+		map.put("out",out);
+		params.add(map);
+		List<Object>paramKeys=new ArrayList<Object>();
+		for(Map aMap:params) {
+			paramKeys.addAll(aMap.values());
+			paramKeys.addAll(aMap.keySet());
+		}
 		
 		
 		List<Map<String, Object>> nombreEtiquetaTamanio = jdbcTemplate.queryForList("SELECT sal.nombre, sal.etiqueta,sal.tam FROM reportes.SALIDA sal WHERE sal.reporte_id = '" + reporteDTO.getReporteId() + "'"); 
@@ -112,11 +126,9 @@ class ReportesController {
 		} 
 		
 		Boolean paramValidos = filters.keySet().stream().allMatch(
-		   param -> params.contains(param)
+		   param -> paramKeys.contains(param)
 		);
-		filters.keySet().stream().forEach(
-				   k -> System.out.println(k)
-				);
+
 		if(!paramValidos) {
 			return "Error: parametro incorrecto";
 		}		
@@ -126,6 +138,37 @@ class ReportesController {
 		reporteDTO.setFilters(filters);
 		reporteDTO.setNombreEtiquetaTamanio(nombreEtiquetaTamanio);
 		reporteDTO.setOut(out);
+		reporteDTO.setCamposDetallados(buildCamposDetallados(reporteDTO.getFilters(), params));
 		return reporteDinamicoService.getReport(reporteDTO);		
+	}
+
+	/**
+	 * los campos detallados se usan para construir los SQL Parameters
+	 * basados en tres atributos: nombre del campo, tipo sql y valor
+	 * 
+	 * para eso se mergean dos mapas 1) viene de los parametros 
+	 * recibidos en el request y de ahí se obtiene el valor de filtro
+	 * 2) de la base de datos se obtiene el tipo sql a utilizar para
+	 * ese campo
+	 * 
+	 */
+	private Map<String, CampoDetalle> buildCamposDetallados(Map<String, String> filters, List<Map<String, Object>> params) {
+		Map<String, CampoDetalle> camposDetallados = new HashMap<String, CampoDetalle>();
+		for(String filterKey : filters.keySet()) {
+			for(Map<String,Object>innMap : params) {
+				if(innMap.containsKey("nombre")&&innMap.containsKey("tipo")) {
+					//setea nombre y tipo sql
+					CampoDetalle campoDetallado = new CampoDetalle((String)innMap.get("nombre"), (Integer)innMap.get("tipo"));
+					//TODO aunque en definitiva si la clave existe el valor se pisa,
+					// hay que ver por qué se repite el campo varias veces (!?)
+					camposDetallados.put(campoDetallado.getNombre(),campoDetallado);
+				}
+			}
+		}
+		for(CampoDetalle campoDetallado : camposDetallados.values()) {
+			// setea el valor de filtrado
+			campoDetallado.setValor(filters.get(campoDetallado.getNombre()));
+		}
+		return camposDetallados;
 	}
 }

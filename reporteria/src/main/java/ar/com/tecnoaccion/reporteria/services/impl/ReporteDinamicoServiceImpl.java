@@ -17,6 +17,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import ar.com.tecnoaccion.reporteria.core.CampoDetalle;
 import ar.com.tecnoaccion.reporteria.core.dinamico.GenericReport;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Arg;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.ColumnaSalida;
@@ -55,7 +56,7 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 		String outputFilename = reporteOutputPath + filename;
 		String outputUrl      = reporteUrl + filename;	
         OrganizacionDTO orga = organizacionService.getByCodigo(dto.getCodigoOrganizacion());
-        MapSqlParameterSource parameters = createSqlParameters(dto.getFilters());
+        MapSqlParameterSource parameters = createSqlParameters(dto.getCamposDetallados());
 		DatoReporte datoReporte = createDatoReporte(dto, orga,parameters);
         Salida salidaReporte = mapearConfiguracionSalida(dto, orga);
         List<Map<String, Object>> datos = namedParameterJdbcTemplate.queryForList(dto.getConsultaSql(),parameters); 
@@ -73,10 +74,11 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 			return "error creando reporte "+outputFilename;
     }
 
-	private MapSqlParameterSource createSqlParameters(Map<String, String> filters) {
+	private MapSqlParameterSource createSqlParameters(Map<String, CampoDetalle> camposDetallados) {
 		MapSqlParameterSource parameters = new MapSqlParameterSource();
-        for(String campo : filters.keySet()) {
-        	parameters.addValue(campo,new SqlParameterValue(Types.VARCHAR, filters.get(campo)));
+        for(String campo : camposDetallados.keySet()) {
+        	CampoDetalle campoDetalle = camposDetallados.get(campo);
+        	parameters.addValue(campoDetalle.getNombre(), new SqlParameterValue(campoDetalle.getTipoSql(), campoDetalle.getValor()));
         }
 		return parameters;
 	}
