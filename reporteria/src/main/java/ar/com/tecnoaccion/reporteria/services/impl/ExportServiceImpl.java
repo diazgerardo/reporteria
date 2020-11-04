@@ -29,11 +29,11 @@ import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 public class ExportServiceImpl implements ExportService {
 
 	private static Logger logger = Logger.getLogger(ExportServiceImpl.class);
-	public static final String FORMAT_HTML = "html";
-	public static final String FORMAT_PDF = "pdf";
-	public static final String FORMAT_XLSX = "xlsx";
+	public static final CType FORMAT_HTML = CType.html;
+	public static final CType FORMAT_PDF = CType.pdf;
+	public static final CType FORMAT_XLSX = CType.xls;
 	@SuppressWarnings("rawtypes")
-	final private static Map<String, Exporter> EXPORTERS = new HashMap<String, Exporter>();
+	final private static Map<CType, Exporter> EXPORTERS = new HashMap<CType, Exporter>();
 	static {
 		EXPORTERS.put(FORMAT_HTML, new HtmlExporter());
 		EXPORTERS.put(FORMAT_PDF, new JRPdfExporter());
@@ -42,7 +42,7 @@ public class ExportServiceImpl implements ExportService {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Boolean exportAs(final JasperPrint jasperPrint, final CType type, final String outputFile) throws ReportException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		final Exporter exporter = EXPORTERS.get(type.getName());
+		final Exporter exporter = EXPORTERS.get(type);
 		exporter.setExporterInput(new SimpleExporterInput(jasperPrint));
 		exporter.setExporterOutput(getOutput(type, out));
 		try {
