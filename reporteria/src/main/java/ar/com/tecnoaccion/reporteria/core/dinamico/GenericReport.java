@@ -9,11 +9,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import ar.com.fdvs.dj.core.DynamicJasperHelper;
 import ar.com.fdvs.dj.core.layout.ClassicLayoutManager;
 import ar.com.fdvs.dj.core.layout.HorizontalBandAlignment;
 import ar.com.fdvs.dj.domain.AutoText;
 import ar.com.fdvs.dj.domain.DynamicReport;
+import ar.com.fdvs.dj.domain.ImageBanner.Alignment;
 import ar.com.fdvs.dj.domain.Style;
 import ar.com.fdvs.dj.domain.builders.ColumnBuilder;
 import ar.com.fdvs.dj.domain.builders.ColumnBuilderException;
@@ -25,6 +28,7 @@ import ar.com.fdvs.dj.domain.constants.HorizontalAlign;
 import ar.com.fdvs.dj.domain.constants.Transparency;
 import ar.com.fdvs.dj.domain.constants.VerticalAlign;
 import ar.com.fdvs.dj.domain.entities.columns.AbstractColumn;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.ColumnaEncabezado;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.DatoReporte;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Salida;
 import ar.com.tecnoaccion.reporteria.exception.ReportException;
@@ -41,22 +45,17 @@ import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
  * SuppressWarnings for HorizontalAlign, VertialAlign constants
  * as they have been deprecated by DynamicJasper with no alternative or replacement mentioned.
  */
+
 public class GenericReport implements Report {
 	private DatoReporte datoReporte;
 	private Salida salidaReporte;
 	private List<Map<String,Object>> resultados;
-
+	
 	public GenericReport(DatoReporte datoReporte, Salida salidaReporte,List<Map<String, Object>> resultados) {
 		this.datoReporte = datoReporte;
 		this.salidaReporte = salidaReporte;
 		this.resultados = resultados;
 	}
-
-	//private final Collection<Employee> employees;
-
-	//public GenericReport(final Collection<Employee> employees) {
-	//	this.employees = new ArrayList<>(employees);
-	//}
 
 	public JasperPrint getReport() throws ReportException {
 		final JasperPrint jp;
@@ -67,7 +66,6 @@ public class GenericReport implements Report {
 			DynamicReport dynaReport = getReport(headerStyle, detailTextStyle, detailNumberStyle);
 			jp = DynamicJasperHelper.generateJasperPrint(dynaReport, new ClassicLayoutManager(),
 					new JRBeanCollectionDataSource(resultados));
-		//			new JRBeanCollectionDataSource(employees));
 		} catch (JRException | ColumnBuilderException | ClassNotFoundException e) {
 			throw new ReportException(e);
 		}
@@ -130,10 +128,18 @@ public class GenericReport implements Report {
 			throws ColumnBuilderException, ClassNotFoundException {
 
 		DynamicReportBuilder report = new DynamicReportBuilder();
+		report.addImageBanner(datoReporte.getReporteLogoPath(), datoReporte.getReporteLogoWidth(), datoReporte.getReporteLogoHeight(), Alignment.Left);
 		salidaReporte.getColumnas().stream().forEach(
-				k -> report.addColumn(createColumn(k.getNombre(),String.class,k.getTitulo(),k.getTamanio().multiply(new BigDecimal(100)).intValue(),headerStyle,detailTextStyle)));
+				k -> report.addColumn(
+						createColumn(
+								k.getNombre(),
+								String.class,
+								k.getTitulo(),
+								k.getTamanio().multiply(new BigDecimal(100)).intValue(),
+								headerStyle,
+								detailTextStyle)));
 		
-				StyleBuilder titleStyle = new StyleBuilder(true);
+		StyleBuilder titleStyle = new StyleBuilder(true);
 		titleStyle.setHorizontalAlign(HorizontalAlign.CENTER);
 		titleStyle.setFont(new Font(20, null, true));
 		
@@ -144,8 +150,8 @@ public class GenericReport implements Report {
 		report.setTitle(salidaReporte.getTitulo());
 		report.setTitleStyle(titleStyle.build());
 		String argumentos=datoReporte.getArgumentos().stream()
-				.filter(e -> Objects.nonNull(e.getValor()))
-				.map(e -> e.getDescripcion()+"="+e.getValor())
+				.filter(e -> Objects.nonNull(e.getNombre()))
+				.map(e -> e.getNombre()+"="+e.getValor())
 				.collect(Collectors.joining(", "));
 		if(Objects.nonNull(argumentos) && !argumentos.isEmpty()) {
 			report.setSubtitle("Parámetros: " + argumentos);
@@ -153,9 +159,9 @@ public class GenericReport implements Report {
 		}
 		report.setUseFullPageWidth(true);
 		
-		String texto=datoReporte.getNombreOrga();
+		String texto=salidaReporte.getFooter();
 		AutoText hdr=new AutoText((texto),AutoText.POSITION_FOOTER,HorizontalBandAlignment.LEFT);
-		hdr.setWidth(300);
+		hdr.setWidth(600);
 		report.addAutoText(hdr);
 		//report.addFirstPageImageBanner("/home/marinor/sc.png",120,15, ImageBanner.Alignment.Center);
 		report.addAutoText(AutoText.AUTOTEXT_PAGE_X_SLASH_Y,AutoText.POSITION_FOOTER, AutoText.ALIGNMENT_RIGHT);

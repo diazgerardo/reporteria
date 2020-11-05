@@ -1,4 +1,4 @@
-package ar.com.tecnoaccion.reporteria.core;
+package ar.com.tecnoaccion.reporteria.core.dinamico.datos;
 
 public class CampoDetalle {
 	

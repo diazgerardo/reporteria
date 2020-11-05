@@ -3,7 +3,7 @@ package ar.com.tecnoaccion.reporteria.dto;
 import java.util.List;
 import java.util.Map;
 
-import ar.com.tecnoaccion.reporteria.core.CampoDetalle;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoDetalle;
 import ar.com.tecnoaccion.reporteria.dto.enums.CType;
 
 public class ReporteDTO {

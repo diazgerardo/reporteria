@@ -1,7 +1,6 @@
 package ar.com.tecnoaccion.reporteria.services.impl;
 
 
-import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,14 +16,14 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import ar.com.tecnoaccion.reporteria.core.CampoDetalle;
 import ar.com.tecnoaccion.reporteria.core.dinamico.GenericReport;
-import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Arg;
-import ar.com.tecnoaccion.reporteria.core.dinamico.datos.ColumnaSalida;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoDetalle;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.ColumnaEncabezado;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.DatoReporte;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Salida;
 import ar.com.tecnoaccion.reporteria.dto.OrganizacionDTO;
 import ar.com.tecnoaccion.reporteria.dto.ReporteDTO;
+import ar.com.tecnoaccion.reporteria.exception.ReportException;
 import ar.com.tecnoaccion.reporteria.services.ExportService;
 import ar.com.tecnoaccion.reporteria.services.OrganizacionService;
 import ar.com.tecnoaccion.reporteria.services.ReporteDinamicoService;
@@ -37,9 +36,14 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 	
 	@Value("${reporte.output.path}")
 	private String reporteOutputPath;
-
 	@Value("${reporte.url}")
 	private String reporteUrl;
+	@Value("${reporte.logo.path}")
+	private String reporteLogoPath;
+	@Value("${reporte.logo.width}")
+	private int reporteLogoWidth;
+	@Value("${reporte.logo.height}")
+	private int reporteLogoHeight; 
 	
 	@Autowired
 	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
@@ -57,10 +61,11 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 		String outputUrl      = reporteUrl + filename;	
         OrganizacionDTO orga = organizacionService.getByCodigo(dto.getCodigoOrganizacion());
         MapSqlParameterSource parameters = createSqlParameters(dto.getCamposDetallados());
-		DatoReporte datoReporte = createDatoReporte(dto, orga,parameters);
+		DatoReporte datoReporte = createDatoReporte(dto, orga,dto.getCamposDetallados());
         Salida salidaReporte = mapearConfiguracionSalida(dto, orga);
-        List<Map<String, Object>> datos = namedParameterJdbcTemplate.queryForList(dto.getConsultaSql(),parameters); 
-		GenericReport report = new GenericReport(datoReporte, salidaReporte, datos);
+        List<Map<String, Object>> columnnasDatos = namedParameterJdbcTemplate.queryForList(dto.getConsultaSql(),parameters); 
+        comprobarCorrespondenciaColumnaEncabezado(salidaReporte.getColumnas(), columnnasDatos);
+		GenericReport report = new GenericReport(datoReporte, salidaReporte, columnnasDatos);
 		Boolean result = Boolean.FALSE;
 		try {
 			JasperPrint jp = report.getReport();
@@ -74,6 +79,14 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 			return "error creando reporte "+outputFilename;
     }
 
+	private void comprobarCorrespondenciaColumnaEncabezado(List<ColumnaEncabezado> encabezados, List<Map<String, Object>> datos) {
+		for(Map<String,Object>fila : datos) {
+			if(fila.size()!=encabezados.size())
+				throw new RuntimeException("no coincide el numero de columnas("+fila.size()+") con el numero de encabezados("+encabezados.size()+")!");
+		}
+		//ok
+	}
+
 	private MapSqlParameterSource createSqlParameters(Map<String, CampoDetalle> camposDetallados) {
 		MapSqlParameterSource parameters = new MapSqlParameterSource();
         for(String campo : camposDetallados.keySet()) {
@@ -84,24 +97,26 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 	}
 
 	private Salida mapearConfiguracionSalida(ReporteDTO dto, OrganizacionDTO orga) {
-		List<ColumnaSalida> columnas=new ArrayList<>();
+		List<ColumnaEncabezado> columnas=new ArrayList<>();
         for(Map<String, Object> map : dto.getNombreEtiquetaTamanio()) {
-        	columnas.add(new ColumnaSalida(map));
+        	columnas.add(new ColumnaEncabezado(map));
         }
         Salida salidaReporte=new Salida(dto.getTitulo(),"Lotline - " + orga.getNombre(),columnas);
 		return salidaReporte;
 	}
 
-	private DatoReporte createDatoReporte(ReporteDTO dto, OrganizacionDTO orga, MapSqlParameterSource parameters) {
+	private DatoReporte createDatoReporte(ReporteDTO dto, OrganizacionDTO orga, Map<String, CampoDetalle> camposDetallados) {
 		DatoReporte datoReporte=new DatoReporte();
-        datoReporte.setNombreOrga(orga.getNombre());
-        datoReporte.setKey("testReport");
-        List<Arg> args=new ArrayList<>();
-        args.add(new Arg("desde","Fecha desde",String.class.getName(), Types.VARCHAR,((SqlParameterValue)parameters.getValues().get("desde")).getValue().toString(),false));
-        args.add(new Arg("hasta","Fecha hasta",String.class.getName(),Types.VARCHAR,((SqlParameterValue)parameters.getValues().get("hasta")).getValue().toString() ,false));
+        datoReporte.setKey(dto.getKey());
+        List<CampoDetalle> args=new ArrayList<>();
+        args.addAll(camposDetallados.values());
         datoReporte.setCodigoOrganizacion(dto.getCodigoOrganizacion());
         datoReporte.setOut(dto.getOut());
         datoReporte.setArgumentos(args);
+        datoReporte.setReporteLogoHeight( reporteLogoHeight );
+        datoReporte.setReporteLogoPath ( reporteLogoPath );
+        datoReporte.setReporteLogoWidth( reporteLogoWidth );
+        		
 		return datoReporte;
 	}
 }

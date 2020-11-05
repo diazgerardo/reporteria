@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.com.tecnoaccion.reporteria.core.CampoDetalle;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoDetalle;
 import ar.com.tecnoaccion.reporteria.dto.OrganizacionDTO;
 import ar.com.tecnoaccion.reporteria.dto.ReporteDTO;
 import ar.com.tecnoaccion.reporteria.dto.enums.CType;

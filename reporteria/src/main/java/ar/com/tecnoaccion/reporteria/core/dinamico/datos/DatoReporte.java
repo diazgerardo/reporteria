@@ -10,11 +10,11 @@ public class DatoReporte {
     private String key;
     private CType out;
     private int codigoOrganizacion;
-    private List<Arg> argumentos;
+    private List<CampoDetalle> camposDetallados;
 	private String nombreOrga;
-
-    public DatoReporte() {
-    }
+	private int reporteLogoHeight;
+	private String reporteLogoPath;
+	private int reporteLogoWidth;
 
     public String getKey() {
         return key;
@@ -40,20 +40,36 @@ public class DatoReporte {
         this.codigoOrganizacion = codigoOrganizacion;
     }
 
-    public List<Arg> getArgumentos() {
-        return argumentos;
+    public List<CampoDetalle> getArgumentos() {
+        return camposDetallados;
     }
 
-    public void setArgumentos(List<Arg> argumentos) {
-        this.argumentos = argumentos;
+    public void setArgumentos(List<CampoDetalle> camposDetallados) {
+        this.camposDetallados = camposDetallados;
     }
 
-	public String getNombreOrga() {
-		return this.nombreOrga;
+	public void setReporteLogoPath(String reporteLogoPath) {
+		this.reporteLogoPath=reporteLogoPath;
 	}
-    public void setNombreOrga(String nombreOrga) {
-		this.nombreOrga = nombreOrga;
+
+	public void setReporteLogoWidth(int reporteLogoWidth) {
+		this.reporteLogoWidth=reporteLogoWidth;
 	}
-	
+	public void setReporteLogoHeight(int reporteLogoHeight) {
+		this.reporteLogoHeight=reporteLogoHeight;
+	}
+
+	public int getReporteLogoHeight() {
+		return reporteLogoHeight;
+	}
+
+	public String getReporteLogoPath() {
+		return reporteLogoPath;
+	}
+
+	public int getReporteLogoWidth() {
+		return reporteLogoWidth;
+	}
+
 
 }
