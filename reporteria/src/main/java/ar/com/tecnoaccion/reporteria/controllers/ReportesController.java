@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoDetalle;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoEspecificado;
 import ar.com.tecnoaccion.reporteria.dto.OrganizacionDTO;
 import ar.com.tecnoaccion.reporteria.dto.ReporteDTO;
 import ar.com.tecnoaccion.reporteria.dto.enums.CType;
@@ -75,6 +75,7 @@ class ReportesController {
 		return toJSONArray(jdbcTemplate.queryForList("SELECT * FROM reportes.SALIDA;")).toString();
 	}	
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@GetMapping("/dinamicos")
 	String reporteDinamico(
 			@RequestParam(value="key", required=true) String key,
@@ -138,12 +139,12 @@ class ReportesController {
 		reporteDTO.setFilters(filters);
 		reporteDTO.setNombreEtiquetaTamanio(nombreEtiquetaTamanio);
 		reporteDTO.setOut(out);
-		reporteDTO.setCamposDetallados(buildCamposDetallados(reporteDTO.getFilters(), params));
+		reporteDTO.setCamposEspecificados(buildCamposEspecificados(reporteDTO.getFilters(), params));
 		return reporteDinamicoService.getReport(reporteDTO);		
 	}
 
 	/**
-	 * los campos detallados se usan para construir los SQL Parameters
+	 * los campos especificados se usan para construir los SQL Parameters
 	 * basados en tres atributos: nombre del campo, tipo sql y valor
 	 * 
 	 * para eso se mergean dos mapas 1) viene de los parametros 
@@ -152,23 +153,23 @@ class ReportesController {
 	 * ese campo
 	 * 
 	 */
-	private Map<String, CampoDetalle> buildCamposDetallados(Map<String, String> filters, List<Map<String, Object>> params) {
-		Map<String, CampoDetalle> camposDetallados = new HashMap<String, CampoDetalle>();
+	private Map<String, CampoEspecificado> buildCamposEspecificados(Map<String, String> filters, List<Map<String, Object>> params) {
+		Map<String, CampoEspecificado> camposEspecificados = new HashMap<String, CampoEspecificado>();
 		for(String filterKey : filters.keySet()) {
 			for(Map<String,Object>innMap : params) {
 				if(innMap.containsKey("nombre")&&innMap.containsKey("tipo")) {
 					//setea nombre y tipo sql
-					CampoDetalle campoDetallado = new CampoDetalle((String)innMap.get("nombre"), (Integer)innMap.get("tipo"));
+					CampoEspecificado campoEspecificado = new CampoEspecificado((String)innMap.get("nombre"), (Integer)innMap.get("tipo"));
 					//TODO aunque en definitiva si la clave existe el valor se pisa,
-					// hay que ver por qué se repite el campo varias veces (!?)
-					camposDetallados.put(campoDetallado.getNombre(),campoDetallado);
+					// aún hay que ver por qué se repite el campo varias veces (!?)
+					camposEspecificados.put(campoEspecificado.getNombre(),campoEspecificado);
 				}
 			}
 		}
-		for(CampoDetalle campoDetallado : camposDetallados.values()) {
+		for(CampoEspecificado campoEspecificado : camposEspecificados.values()) {
 			// setea el valor de filtrado
-			campoDetallado.setValor(filters.get(campoDetallado.getNombre()));
+			campoEspecificado.setValor(filters.get(campoEspecificado.getNombre()));
 		}
-		return camposDetallados;
+		return camposEspecificados;
 	}
 }

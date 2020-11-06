@@ -18,7 +18,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import ar.com.tecnoaccion.reporteria.core.dinamico.GenericReport;
-import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoDetalle;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoEspecificado;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.ColumnaEncabezado;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.DatoReporte;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Logo;
@@ -29,7 +29,7 @@ import ar.com.tecnoaccion.reporteria.services.ExportService;
 import ar.com.tecnoaccion.reporteria.services.OrganizacionService;
 import ar.com.tecnoaccion.reporteria.services.ReporteDinamicoService;
 import net.sf.jasperreports.engine.JasperPrint;
-
+import static ar.com.tecnoaccion.reporteria.utils.SqlUtils.transform;
 @Service("reporteDinamicoService")
 public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 	
@@ -62,8 +62,8 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 		String outputFilename = reporteOutputPath + filename;
 		String outputUrl      = reporteUrl + filename;	
         OrganizacionDTO orga = organizacionService.getByCodigo(dto.getCodigoOrganizacion());
-        MapSqlParameterSource parameters = createSqlParameters(dto.getCamposDetallados());
-		DatoReporte datoReporte = createDatoReporte(dto, orga,dto.getCamposDetallados());
+        MapSqlParameterSource parameters = createSqlParameters(dto.getCamposEspecificados());
+		DatoReporte datoReporte = createDatoReporte(dto, orga,dto.getCamposEspecificados());
         Salida salidaReporte = mapearConfiguracionSalida(dto, orga);
         List<Map<String, Object>> columnnasDatos = namedParameterJdbcTemplate.queryForList(dto.getConsultaSql(),parameters); 
         checkConsistentBody(salidaReporte.getColumnas(), columnnasDatos);
@@ -95,6 +95,12 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 			for(Map<String,Object>fila : datos) {
 				if(fila.size()!=encabezados.size())
 					throw new RuntimeException("no coincide el numero de columnas("+fila.size()+") con el numero de encabezados("+encabezados.size()+")!");
+				for(String key: fila.keySet()) {
+					Object o = fila.get(key);
+					if(o.getClass()!=String.class) {
+						fila.put(key, o.toString());
+					}
+				}
 			}
 		} else {
 			Map<String, Object> map = new HashMap<String, Object>();
@@ -106,32 +112,32 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 		return datos;
 	}
 
-	private MapSqlParameterSource createSqlParameters(Map<String, CampoDetalle> camposDetallados) {
+	private MapSqlParameterSource createSqlParameters(Map<String, CampoEspecificado> camposEspecificados) {
 		MapSqlParameterSource parameters = new MapSqlParameterSource();
-        for(String campo : camposDetallados.keySet()) {
-        	CampoDetalle campoDetalle = camposDetallados.get(campo);
-        	parameters.addValue(campoDetalle.getNombre(), new SqlParameterValue(campoDetalle.getTipoSql(), campoDetalle.getValor()));
+        for(String campo : camposEspecificados.keySet()) {
+        	CampoEspecificado campoEspecificado = camposEspecificados.get(campo);
+        	parameters.addValue(campoEspecificado.getNombre(), new SqlParameterValue(campoEspecificado.getTipoSql(), transform(campoEspecificado)));
         }
 		return parameters;
 	}
 
 	private Salida mapearConfiguracionSalida(ReporteDTO dto, OrganizacionDTO orga) {
-		List<ColumnaEncabezado> columnas=new ArrayList<>();
+		List<ColumnaEncabezado> encabezadosColumnas=new ArrayList<>();
         for(Map<String, Object> map : dto.getNombreEtiquetaTamanio()) {
-        	columnas.add(new ColumnaEncabezado(map));
+        	encabezadosColumnas.add(new ColumnaEncabezado(map));
         }
-        Salida salidaReporte=new Salida(dto.getTitulo(),"Lotline - " + orga.getNombre(),columnas);
+        Salida salidaReporte=new Salida(dto.getTitulo(),"Lotline - " + orga.getNombre(),encabezadosColumnas);
 		return salidaReporte;
 	}
 
-	private DatoReporte createDatoReporte(ReporteDTO dto, OrganizacionDTO orga, Map<String, CampoDetalle> camposDetallados) {
+	private DatoReporte createDatoReporte(ReporteDTO dto, OrganizacionDTO orga, Map<String, CampoEspecificado> camposDetallados) {
 		DatoReporte datoReporte=new DatoReporte();
         datoReporte.setKey(dto.getKey());
-        List<CampoDetalle> args=new ArrayList<>();
-        args.addAll(camposDetallados.values());
+        List<CampoEspecificado> camposEspecificados=new ArrayList<>();
+        camposEspecificados.addAll(camposDetallados.values());
         datoReporte.setCodigoOrganizacion(dto.getCodigoOrganizacion());
         datoReporte.setOut(dto.getOut());
-        datoReporte.setArgumentos(args);
+        datoReporte.setCamposEspecificados(camposEspecificados);
         datoReporte.setLogo( new Logo(reporteLogoPath,reporteLogoHeight, reporteLogoWidth, reporteLogoAlign) );
 		return datoReporte;
 	}

@@ -1,0 +1,3 @@
+2020-XI-6
+-soporta reportes dinamicos pdf, xls, html
+-soporta queries parametrizados con tipos de dato varchar (12) y entero (4,5)

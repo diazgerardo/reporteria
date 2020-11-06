@@ -10,7 +10,7 @@ public class DatoReporte {
     private String key;
     private CType out;
     private int codigoOrganizacion;
-    private List<CampoDetalle> camposDetallados;
+    private List<CampoEspecificado> camposEspecificados;
     private Logo logo;
 
     public String getKey() {
@@ -37,12 +37,12 @@ public class DatoReporte {
         this.codigoOrganizacion = codigoOrganizacion;
     }
 
-    public List<CampoDetalle> getArgumentos() {
-        return camposDetallados;
+    public List<CampoEspecificado> getCamposEspecificados() {
+        return camposEspecificados;
     }
 
-    public void setArgumentos(List<CampoDetalle> camposDetallados) {
-        this.camposDetallados = camposDetallados;
+    public void setCamposEspecificados(List<CampoEspecificado> camposEspecificados) {
+        this.camposEspecificados = camposEspecificados;
     }
 
 	public Logo getLogo() {

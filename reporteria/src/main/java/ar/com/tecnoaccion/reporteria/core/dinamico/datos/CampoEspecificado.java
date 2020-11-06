@@ -1,12 +1,12 @@
 package ar.com.tecnoaccion.reporteria.core.dinamico.datos;
 
-public class CampoDetalle {
+public class CampoEspecificado {
 	
 	private String nombre;
 	private int tipoSql;
 	private String valor;
 	
-	public CampoDetalle(String nombre, int tipoSql) {
+	public CampoEspecificado(String nombre, int tipoSql) {
 		this.nombre=nombre;
 		this.tipoSql=tipoSql;
 	}

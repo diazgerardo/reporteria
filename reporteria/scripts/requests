@@ -1,0 +1,2 @@
+-- prueba con nuevo filtro x versión
+http://localhost:8705/reportes/dinamicos?key=reportito&codigoOrganizacion=41&out=pdf&desde=20160801&hasta=20200830&version=1

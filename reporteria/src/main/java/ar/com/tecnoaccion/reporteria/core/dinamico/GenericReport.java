@@ -149,7 +149,7 @@ public class GenericReport implements Report {
 
 		report.setTitle(salidaReporte.getTitulo());
 		report.setTitleStyle(titleStyle.build());
-		String argumentos=datoReporte.getArgumentos().stream()
+		String argumentos=datoReporte.getCamposEspecificados().stream()
 				.filter(e -> Objects.nonNull(e.getNombre()))
 				.map(e -> e.getNombre()+"="+e.getValor())
 				.collect(Collectors.joining(", "));

@@ -3,7 +3,7 @@ package ar.com.tecnoaccion.reporteria.dto;
 import java.util.List;
 import java.util.Map;
 
-import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoDetalle;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoEspecificado;
 import ar.com.tecnoaccion.reporteria.dto.enums.CType;
 
 public class ReporteDTO {
@@ -15,7 +15,7 @@ public class ReporteDTO {
 	private int codigoOrganizacion;
 	private Map<String, String> filters;
 	private List<Map<String, Object>> nombreEtiquetaTamanio;
-	private Map<String, CampoDetalle> camposDetallados;
+	private Map<String, CampoEspecificado> camposEspecificados;
 	private CType out;
 	
 	
@@ -84,12 +84,12 @@ public class ReporteDTO {
 		this.out = out;
 	}
 
-	public Map<String, CampoDetalle> getCamposDetallados() {
-		return camposDetallados;
+	public Map<String, CampoEspecificado> getCamposEspecificados() {
+		return camposEspecificados;
 	}
 
-	public void setCamposDetallados(Map<String, CampoDetalle> camposDetallados) {
-		this.camposDetallados = camposDetallados;
+	public void setCamposEspecificados(Map<String, CampoEspecificado> camposEspecificados) {
+		this.camposEspecificados = camposEspecificados;
 	}
 
 	@Override
