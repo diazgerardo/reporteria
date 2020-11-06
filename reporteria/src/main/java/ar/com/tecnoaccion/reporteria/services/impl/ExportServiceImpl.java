@@ -36,7 +36,7 @@ public class ExportServiceImpl implements ExportService {
 	static {
 		EXPORTERS.put(FORMAT_HTML, new HtmlExporter());
 		EXPORTERS.put(FORMAT_PDF, new JRPdfExporter());
-		EXPORTERS.put(FORMAT_HTML, new JRXlsxExporter());
+		EXPORTERS.put(FORMAT_XLSX, new JRXlsxExporter());
 	}
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Boolean exportAs(final JasperPrint jasperPrint, final CType type, final String outputFile) throws ReportException {
@@ -64,7 +64,7 @@ public class ExportServiceImpl implements ExportService {
 
 	private ExporterOutput getOutput(CType type, ByteArrayOutputStream out) {
 		return 
-			FORMAT_HTML.equals(type.getName()) 
+			FORMAT_HTML.equals(type) 
 				? new SimpleHtmlExporterOutput(out)
 				: new SimpleOutputStreamExporterOutput(out);
 	}

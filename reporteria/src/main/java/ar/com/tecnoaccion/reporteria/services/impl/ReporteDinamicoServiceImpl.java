@@ -4,6 +4,7 @@ package ar.com.tecnoaccion.reporteria.services.impl;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,10 +21,10 @@ import ar.com.tecnoaccion.reporteria.core.dinamico.GenericReport;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoDetalle;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.ColumnaEncabezado;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.DatoReporte;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Logo;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Salida;
 import ar.com.tecnoaccion.reporteria.dto.OrganizacionDTO;
 import ar.com.tecnoaccion.reporteria.dto.ReporteDTO;
-import ar.com.tecnoaccion.reporteria.exception.ReportException;
 import ar.com.tecnoaccion.reporteria.services.ExportService;
 import ar.com.tecnoaccion.reporteria.services.OrganizacionService;
 import ar.com.tecnoaccion.reporteria.services.ReporteDinamicoService;
@@ -44,6 +45,8 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 	private int reporteLogoWidth;
 	@Value("${reporte.logo.height}")
 	private int reporteLogoHeight; 
+	@Value("${reporte.logo.align}")
+	private String reporteLogoAlign; 
 	
 	@Autowired
 	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
@@ -55,7 +58,6 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 	OrganizacionService organizacionService;
 
     public String getReport(ReporteDTO dto) {
-   
     	String filename       = dto.getKey() + new SimpleDateFormat("YYYYMMddhhmmsss").format(new Date()) + "." + dto.getOut().getName();
 		String outputFilename = reporteOutputPath + filename;
 		String outputUrl      = reporteUrl + filename;	
@@ -64,12 +66,12 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 		DatoReporte datoReporte = createDatoReporte(dto, orga,dto.getCamposDetallados());
         Salida salidaReporte = mapearConfiguracionSalida(dto, orga);
         List<Map<String, Object>> columnnasDatos = namedParameterJdbcTemplate.queryForList(dto.getConsultaSql(),parameters); 
-        comprobarCorrespondenciaColumnaEncabezado(salidaReporte.getColumnas(), columnnasDatos);
+        checkConsistentBody(salidaReporte.getColumnas(), columnnasDatos);
 		GenericReport report = new GenericReport(datoReporte, salidaReporte, columnnasDatos);
 		Boolean result = Boolean.FALSE;
 		try {
 			JasperPrint jp = report.getReport();
-			result = exportService.exportAs(jp, dto.getOut().pdf, outputFilename);
+			result = exportService.exportAs(jp, dto.getOut(), outputFilename);
 		} catch (Throwable t) {
 			logger.error(t);
 		}
@@ -79,12 +81,29 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
 			return "error creando reporte "+outputFilename;
     }
 
-	private void comprobarCorrespondenciaColumnaEncabezado(List<ColumnaEncabezado> encabezados, List<Map<String, Object>> datos) {
-		for(Map<String,Object>fila : datos) {
-			if(fila.size()!=encabezados.size())
-				throw new RuntimeException("no coincide el numero de columnas("+fila.size()+") con el numero de encabezados("+encabezados.size()+")!");
+
+    /**
+     * si existen datos, valida que el numero de columnas coincidan con
+     * la cantidad de encabezados
+     * si no existen, incorpora una linea con tantos literales "sin datos"
+     * como columnas existan para que salga un reporte del tipo esperado
+     * indicando los parametros recibidos y que el resultado no tiene
+     * datos para ese periodo
+     */
+	private List<Map<String, Object>> checkConsistentBody(List<ColumnaEncabezado> encabezados, List<Map<String, Object>> datos) {
+		if(!datos.isEmpty()) {
+			for(Map<String,Object>fila : datos) {
+				if(fila.size()!=encabezados.size())
+					throw new RuntimeException("no coincide el numero de columnas("+fila.size()+") con el numero de encabezados("+encabezados.size()+")!");
+			}
+		} else {
+			Map<String, Object> map = new HashMap<String, Object>();
+			for(ColumnaEncabezado ce : encabezados) {
+				map.put(ce.getNombre(), new String("sin datos"));
+			}
+			datos.add(map);
 		}
-		//ok
+		return datos;
 	}
 
 	private MapSqlParameterSource createSqlParameters(Map<String, CampoDetalle> camposDetallados) {
@@ -113,10 +132,7 @@ public class ReporteDinamicoServiceImpl implements ReporteDinamicoService {
         datoReporte.setCodigoOrganizacion(dto.getCodigoOrganizacion());
         datoReporte.setOut(dto.getOut());
         datoReporte.setArgumentos(args);
-        datoReporte.setReporteLogoHeight( reporteLogoHeight );
-        datoReporte.setReporteLogoPath ( reporteLogoPath );
-        datoReporte.setReporteLogoWidth( reporteLogoWidth );
-        		
+        datoReporte.setLogo( new Logo(reporteLogoPath,reporteLogoHeight, reporteLogoWidth, reporteLogoAlign) );
 		return datoReporte;
 	}
 }

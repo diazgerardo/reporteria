@@ -9,14 +9,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
-
 import ar.com.fdvs.dj.core.DynamicJasperHelper;
 import ar.com.fdvs.dj.core.layout.ClassicLayoutManager;
 import ar.com.fdvs.dj.core.layout.HorizontalBandAlignment;
 import ar.com.fdvs.dj.domain.AutoText;
 import ar.com.fdvs.dj.domain.DynamicReport;
-import ar.com.fdvs.dj.domain.ImageBanner.Alignment;
 import ar.com.fdvs.dj.domain.Style;
 import ar.com.fdvs.dj.domain.builders.ColumnBuilder;
 import ar.com.fdvs.dj.domain.builders.ColumnBuilderException;
@@ -28,8 +25,8 @@ import ar.com.fdvs.dj.domain.constants.HorizontalAlign;
 import ar.com.fdvs.dj.domain.constants.Transparency;
 import ar.com.fdvs.dj.domain.constants.VerticalAlign;
 import ar.com.fdvs.dj.domain.entities.columns.AbstractColumn;
-import ar.com.tecnoaccion.reporteria.core.dinamico.datos.ColumnaEncabezado;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.DatoReporte;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Logo;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Salida;
 import ar.com.tecnoaccion.reporteria.exception.ReportException;
 import net.sf.jasperreports.engine.JRException;
@@ -128,7 +125,10 @@ public class GenericReport implements Report {
 			throws ColumnBuilderException, ClassNotFoundException {
 
 		DynamicReportBuilder report = new DynamicReportBuilder();
-		report.addImageBanner(datoReporte.getReporteLogoPath(), datoReporte.getReporteLogoWidth(), datoReporte.getReporteLogoHeight(), Alignment.Left);
+		Logo logo = datoReporte.getLogo();
+		if(logo.exists()) {
+			report.addImageBanner(logo.getLogoPath(), logo.getLogoWidth(), logo.getLogoHeight(), logo.getLogoAlign());
+		}
 		salidaReporte.getColumnas().stream().forEach(
 				k -> report.addColumn(
 						createColumn(
