@@ -1,12 +1,14 @@
 package ar.com.tecnoaccion.reporteria.dto;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoEspecificado;
 import ar.com.tecnoaccion.reporteria.dto.enums.CType;
 
-public class ReporteDTO {
+public class RepositoryInput {
 
 	private Integer reporteId;
 	private String titulo;
@@ -15,8 +17,10 @@ public class ReporteDTO {
 	private int codigoOrganizacion;
 	private Map<String, String> filters;
 	private List<Map<String, Object>> nombreEtiquetaTamanio;
+	private CType cType;
+	private OrganizacionDTO orga;
+	private List<Map<String, Object>> requestParams;
 	private Map<String, CampoEspecificado> camposEspecificados;
-	private CType out;
 	
 	
 	public Integer getReporteId() {
@@ -76,20 +80,73 @@ public class ReporteDTO {
 		this.nombreEtiquetaTamanio = nombreEtiquetaTamanio;
 	}
 
-	public CType getOut() {
-		return out;
+	public CType getCType() {
+		return cType;
 	}
 
-	public void setOut(CType out) {
-		this.out = out;
+	public void setCType(CType cType) {
+		this.cType = cType;
 	}
 
-	public Map<String, CampoEspecificado> getCamposEspecificados() {
-		return camposEspecificados;
+
+	public OrganizacionDTO getOrga() {
+		return orga;
+	}
+
+	public void setOrga(OrganizacionDTO orga) {
+		this.orga = orga;
+	}
+
+	public void setRequestParams(List<Map<String, Object>> requestParams) {
+		this.requestParams = requestParams;
+	}
+	public List<Map<String, Object>> getRequestParams() {
+		return this.requestParams;
 	}
 
 	public void setCamposEspecificados(Map<String, CampoEspecificado> camposEspecificados) {
-		this.camposEspecificados = camposEspecificados;
+		this.camposEspecificados=camposEspecificados;
+	}
+	
+	public Map<String, CampoEspecificado> getCamposEspecificados() {
+		return this.camposEspecificados;
+	}
+
+	public boolean validate() {
+		buildCamposEspecificados();
+		return true;
+	}
+	/**
+	 * los campos especificados se usan para construir los SQL Parameters
+	 * basados en tres atributos: nombre del campo, tipo sql y valor
+	 * 
+	 * para eso se mergean dos mapas 1) viene de los parametros 
+	 * recibidos en el request y de ahí se obtiene el valor de filtro
+	 * 2) de la base de datos se obtiene el tipo sql a utilizar para
+	 * ese campo
+	 * 
+	 */
+	private void buildCamposEspecificados() {
+		this.camposEspecificados = new HashMap<String, CampoEspecificado>();
+		Iterator<Map.Entry<String, String>> it = this.getFilters().entrySet().iterator();
+		while(it.hasNext()) {
+		
+			for(Map<String,Object>innMap : this.getRequestParams()) {
+				if(innMap.containsKey("nombre")&&innMap.containsKey("tipo")) {
+					//setea nombre y tipo sql
+					CampoEspecificado campoEspecificado = new CampoEspecificado((String)innMap.get("nombre"), (Integer)innMap.get("tipo"));
+					//TODO aunque en definitiva si la clave existe el valor se pisa,
+					// aún hay que ver por qué se repite el campo varias veces (!?)
+					camposEspecificados.put(campoEspecificado.getNombre(),campoEspecificado);
+				}
+			}
+			it.next();
+		}
+		for(CampoEspecificado campoEspecificado : camposEspecificados.values()) {
+			// setea el valor de filtrado
+			campoEspecificado.setValor(this.getFilters().get(campoEspecificado.getNombre()));
+		}
+		
 	}
 
 	@Override
@@ -110,8 +167,8 @@ public class ReporteDTO {
 				.append("\nnombreEtiquetaTamanio=")
 				.append(this.nombreEtiquetaTamanio)
 				.append("\nout=")
-				.append(this.out)
+				.append(this.cType)
 				.toString();
 	}
-
 }
+

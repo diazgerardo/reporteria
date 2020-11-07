@@ -5,7 +5,9 @@ import ar.com.tecnoaccion.reporteria.utils.DefinedErrors;
 import java.util.Collection;
 
 public class CustomException extends RuntimeException {
-    private Integer errorCode;
+
+	private static final long serialVersionUID = 7154635638168252203L;
+	private Integer errorCode;
 
     public CustomException(Integer code, String message) {
         super(message);

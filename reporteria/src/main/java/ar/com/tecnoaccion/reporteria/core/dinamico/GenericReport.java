@@ -4,8 +4,6 @@ import java.awt.Color;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -25,9 +23,8 @@ import ar.com.fdvs.dj.domain.constants.HorizontalAlign;
 import ar.com.fdvs.dj.domain.constants.Transparency;
 import ar.com.fdvs.dj.domain.constants.VerticalAlign;
 import ar.com.fdvs.dj.domain.entities.columns.AbstractColumn;
-import ar.com.tecnoaccion.reporteria.core.dinamico.datos.DatoReporte;
+import ar.com.tecnoaccion.reporteria.core.dinamico.datos.JasperReportInput;
 import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Logo;
-import ar.com.tecnoaccion.reporteria.core.dinamico.datos.Salida;
 import ar.com.tecnoaccion.reporteria.exception.ReportException;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperPrint;
@@ -44,14 +41,10 @@ import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
  */
 
 public class GenericReport implements Report {
-	private DatoReporte datoReporte;
-	private Salida salidaReporte;
-	private List<Map<String,Object>> resultados;
-	
-	public GenericReport(DatoReporte datoReporte, Salida salidaReporte,List<Map<String, Object>> resultados) {
-		this.datoReporte = datoReporte;
+
+	private JasperReportInput salidaReporte;
+	public GenericReport(JasperReportInput salidaReporte) {
 		this.salidaReporte = salidaReporte;
-		this.resultados = resultados;
 	}
 
 	public JasperPrint getReport() throws ReportException {
@@ -62,7 +55,7 @@ public class GenericReport implements Report {
 			Style detailNumberStyle = createDetailNumberStyle();
 			DynamicReport dynaReport = getReport(headerStyle, detailTextStyle, detailNumberStyle);
 			jp = DynamicJasperHelper.generateJasperPrint(dynaReport, new ClassicLayoutManager(),
-					new JRBeanCollectionDataSource(resultados));
+					new JRBeanCollectionDataSource(salidaReporte.getColumnasDatos()));
 		} catch (JRException | ColumnBuilderException | ClassNotFoundException e) {
 			throw new ReportException(e);
 		}
@@ -125,7 +118,7 @@ public class GenericReport implements Report {
 			throws ColumnBuilderException, ClassNotFoundException {
 
 		DynamicReportBuilder report = new DynamicReportBuilder();
-		Logo logo = datoReporte.getLogo();
+		Logo logo = salidaReporte.getLogo();
 		if(logo.exists()) {
 			report.addImageBanner(logo.getLogoPath(), logo.getLogoWidth(), logo.getLogoHeight(), logo.getLogoAlign());
 		}
@@ -149,7 +142,7 @@ public class GenericReport implements Report {
 
 		report.setTitle(salidaReporte.getTitulo());
 		report.setTitleStyle(titleStyle.build());
-		String argumentos=datoReporte.getCamposEspecificados().stream()
+		String argumentos=salidaReporte.getCamposEspecificados().values().stream()
 				.filter(e -> Objects.nonNull(e.getNombre()))
 				.map(e -> e.getNombre()+"="+e.getValor())
 				.collect(Collectors.joining(", "));
@@ -166,7 +159,7 @@ public class GenericReport implements Report {
 		//report.addFirstPageImageBanner("/home/marinor/sc.png",120,15, ImageBanner.Alignment.Center);
 		report.addAutoText(AutoText.AUTOTEXT_PAGE_X_SLASH_Y,AutoText.POSITION_FOOTER, AutoText.ALIGNMENT_RIGHT);
 		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-		texto="Creado: " + sdf.format(new Date())+" - Registros: " + resultados.size();
+		texto="Creado: " + sdf.format(new Date())+" - Registros: " + salidaReporte.getColumnasDatos().size();
 		hdr=new AutoText((texto), AutoText.POSITION_HEADER,HorizontalBandAlignment.LEFT);
 		hdr.setWidth(new Integer(500));
 		report.addAutoText(hdr);

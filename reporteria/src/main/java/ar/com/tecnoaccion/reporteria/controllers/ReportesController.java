@@ -21,9 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.com.tecnoaccion.reporteria.core.dinamico.datos.CampoEspecificado;
 import ar.com.tecnoaccion.reporteria.dto.OrganizacionDTO;
-import ar.com.tecnoaccion.reporteria.dto.ReporteDTO;
+import ar.com.tecnoaccion.reporteria.dto.RepositoryInput;
 import ar.com.tecnoaccion.reporteria.dto.enums.CType;
 import ar.com.tecnoaccion.reporteria.services.OrganizacionService;
 import ar.com.tecnoaccion.reporteria.services.ReporteDinamicoService;
@@ -84,12 +83,12 @@ class ReportesController {
 			@RequestParam HashMap<String, String> filters
 		) {
 	
-		ReporteDTO reporteDTO = null;
+		RepositoryInput reporteDTO = null;
 		List<Map<String, Object>> results = jdbcTemplate.queryForList("SELECT rep.id,rep.consulta_sql,rep.titulo FROM reportes.REPORTES rep WHERE rep.codigo = '" + key + "'"); 
 		if (results.isEmpty()) {
 			return "Error: reporte desconocido " + key;
 		} else {
-			reporteDTO = new ReporteDTO();
+			reporteDTO = new RepositoryInput();
 			reporteDTO.setReporteId((Integer) results.get(0).get("id"));
 			reporteDTO.setConsultaSql((String) results.get(0).get("consulta_sql"));
 			reporteDTO.setTitulo((String) results.get(0).get("titulo"));
@@ -134,42 +133,15 @@ class ReportesController {
 			return "Error: parametro incorrecto";
 		}		
 		
+		// todo Ok a crer el reporte
 		reporteDTO.setKey(key);
 		reporteDTO.setCodigoOrganizacion(codigoOrganizacion);
 		reporteDTO.setFilters(filters);
 		reporteDTO.setNombreEtiquetaTamanio(nombreEtiquetaTamanio);
-		reporteDTO.setOut(out);
-		reporteDTO.setCamposEspecificados(buildCamposEspecificados(reporteDTO.getFilters(), params));
-		return reporteDinamicoService.getReport(reporteDTO);		
+		reporteDTO.setCType(out);
+		reporteDTO.setRequestParams(params);
+		return reporteDinamicoService.ejecutarReporte(reporteDTO);		
 	}
 
-	/**
-	 * los campos especificados se usan para construir los SQL Parameters
-	 * basados en tres atributos: nombre del campo, tipo sql y valor
-	 * 
-	 * para eso se mergean dos mapas 1) viene de los parametros 
-	 * recibidos en el request y de ahí se obtiene el valor de filtro
-	 * 2) de la base de datos se obtiene el tipo sql a utilizar para
-	 * ese campo
-	 * 
-	 */
-	private Map<String, CampoEspecificado> buildCamposEspecificados(Map<String, String> filters, List<Map<String, Object>> params) {
-		Map<String, CampoEspecificado> camposEspecificados = new HashMap<String, CampoEspecificado>();
-		for(String filterKey : filters.keySet()) {
-			for(Map<String,Object>innMap : params) {
-				if(innMap.containsKey("nombre")&&innMap.containsKey("tipo")) {
-					//setea nombre y tipo sql
-					CampoEspecificado campoEspecificado = new CampoEspecificado((String)innMap.get("nombre"), (Integer)innMap.get("tipo"));
-					//TODO aunque en definitiva si la clave existe el valor se pisa,
-					// aún hay que ver por qué se repite el campo varias veces (!?)
-					camposEspecificados.put(campoEspecificado.getNombre(),campoEspecificado);
-				}
-			}
-		}
-		for(CampoEspecificado campoEspecificado : camposEspecificados.values()) {
-			// setea el valor de filtrado
-			campoEspecificado.setValor(filters.get(campoEspecificado.getNombre()));
-		}
-		return camposEspecificados;
-	}
+
 }
